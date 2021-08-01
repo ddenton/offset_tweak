@@ -52,13 +52,23 @@ def write_single_pack_record(df, filepath):
     df2.to_csv(path_or_buf=file, index=False, float_format=f'%.{int(num_decimals)}f')
 
 
-def print_single_pack_record_to_console(df):
-    # num_decimals = df['num_decimals'].max()
+def print_single_pack_record_to_console(df, pack_name):
+    pack_name = df.at[0, 'pack']
+    df2 = df.drop(columns=['pack', 'song', 'full_filepath', 'num_decimals'])
+    print(f'Tweaking offsets for \"{pack_name}\"')
+    print(df2)
+
+
+def get_approval_for_single_pack_changes(df):
     if df.shape[0]:
-        pack = df.at[0, 'pack']
-        df2 = df.drop(columns=['pack', 'song', 'full_filepath', 'num_decimals'])
-        print(f'Tweaking offsets for \"{pack}\"')
-        print(df2)
+        pack_name = df.at[0, 'pack']
+        print_single_pack_record_to_console(df, pack_name)
+        while True:
+            x = input(f'Apply changes to \"{pack_name}\"? [Y/n] ')
+            if "y" == x.lower():
+                return True
+            elif "n" == x.lower():
+                return False
 
 
 def apply_modification_to_offsets(df, modification):
@@ -94,4 +104,4 @@ if __name__ == '__main__':
     read_offsets(df)
     apply_modification_to_offsets(df, -0.009)
     write_single_pack_record(df, 'offset_tweak.csv')
-    print_single_pack_record_to_console(df)
+    get_approval_for_single_pack_changes(df)
