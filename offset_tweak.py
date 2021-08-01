@@ -1,7 +1,6 @@
 import os
 import re
 import pandas as pd
-import numpy as np
 
 
 def splitall(path):
@@ -46,6 +45,13 @@ def read_offsets(df):
         df.at[index, 'original_offset'] = offset
 
 
+def write_single_pack_record(df, filepath):
+    file = open(filepath, 'w')
+    num_decimals = df['num_decimals'].max()
+    df2 = df.drop(columns=['full_filepath', 'num_decimals'])
+    df2.to_csv(path_or_buf=file, index=False, float_format=f'%.{int(num_decimals)}f')
+
+
 def apply_modification_to_offsets(df, modification):
     df['modification'] = modification
     df['final_offset'] = df['original_offset'] + df['modification']
@@ -78,4 +84,5 @@ if __name__ == '__main__':
     df = filewalk('5guys1pack')
     read_offsets(df)
     apply_modification_to_offsets(df, -0.009)
+    write_single_pack_record(df, 'offset_tweak.csv')
     print(df)
