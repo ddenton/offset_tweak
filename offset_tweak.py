@@ -37,11 +37,21 @@ def read_single_file_offset(filepath):
             return offset, num_decimals
 
 
+def read_offsets(df):
+    """Read the offsets from the files into the dataframe."""
+    for index, row in df.iterrows():
+        offset, num_decimals = read_single_file_offset(row['full_filepath'])
+        # print(f'offset={offset} num_decimals={num_decimals}')
+        df.at[index, 'num_decimals'] = num_decimals
+        df.at[index, 'original_offset'] = offset
+
+
 def filewalk(root_directory, filetype='ssc'):
     """Returns a dataframe with all of the file structure information for files of the requested type."""
     filetype_regex = re.compile(f'.+\.{filetype}')
     df = pd.DataFrame()
     for dirpath, dirs, files in os.walk(root_directory):
+        dirs.sort(key=lambda v: v.lower())  # Sort so that we travers in alphabetical depth first order
         # print(f'dirpath={dirpath} dirs={dirs} files={files}')
         for file in files:
             if filetype_regex.match(file):
@@ -58,7 +68,6 @@ def filewalk(root_directory, filetype='ssc'):
 if __name__ == '__main__':
     pd.set_option('display.max_columns', 500)
     pd.set_option('display.width', 1000)
-    df = filewalk('WAWA')
+    df = filewalk('5guys1pack')
+    read_offsets(df)
     print(df)
-    print(file := df.loc[0, 'full_filepath'])
-    read_single_file_offset(file)
