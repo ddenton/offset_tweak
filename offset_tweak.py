@@ -28,7 +28,7 @@ ssc_offset_regex = re.compile('#OFFSET:(.+\.(.+));')
 
 
 def read_single_file_offset(filepath):
-    file = open(filepath, 'r')
+    file = open(filepath, 'r', errors='replace')
     while line := file.readline():
         m = ssc_offset_regex.match(line)
         if m:
@@ -55,7 +55,7 @@ def write_single_pack_record(df, filepath):
 
 
 def apply_single_song_changes(df_row, num_decimals):
-    with fileinput.FileInput(df_row['full_filepath'], inplace=True, backup='.bak') as file:
+    with fileinput.FileInput(df_row['full_filepath'], inplace=True) as file:
         for line in file:
             m = ssc_offset_regex.match(line)
             final_offset = df_row['final_offset']
