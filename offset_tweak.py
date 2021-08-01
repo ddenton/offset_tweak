@@ -46,6 +46,11 @@ def read_offsets(df):
         df.at[index, 'original_offset'] = offset
 
 
+def apply_modification_to_offsets(df, modification):
+    df['modification'] = modification
+    df['final_offset'] = df['original_offset'] + df['modification']
+
+
 def filewalk(root_directory, filetype='ssc'):
     """Returns a dataframe with all of the file structure information for files of the requested type."""
     filetype_regex = re.compile(f'.+\.{filetype}')
@@ -57,10 +62,12 @@ def filewalk(root_directory, filetype='ssc'):
             if filetype_regex.match(file):
                 splitpath = splitall(dirpath)
                 if len(splitpath) == 1:
-                    dict = {'pack': None, 'song': splitpath[-1], 'file': file, 'full_filepath': os.path.join(dirpath, file)}
+                    dict = {'pack': None, 'song': splitpath[-1], 'file': file,
+                            'full_filepath': os.path.join(dirpath, file)}
                     df = df.append(dict, ignore_index=True)
                 else:
-                    dict = {'pack': splitpath[-2], 'song': splitpath[-1], 'file': file, 'full_filepath': os.path.join(dirpath, file)}
+                    dict = {'pack': splitpath[-2], 'song': splitpath[-1], 'file': file,
+                            'full_filepath': os.path.join(dirpath, file)}
                     df = df.append(dict, ignore_index=True)
     return df
 
@@ -70,4 +77,5 @@ if __name__ == '__main__':
     pd.set_option('display.width', 1000)
     df = filewalk('5guys1pack')
     read_offsets(df)
+    apply_modification_to_offsets(df, -0.009)
     print(df)
