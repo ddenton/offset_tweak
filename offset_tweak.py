@@ -1,3 +1,4 @@
+import fileinput
 import os
 import re
 import pandas as pd
@@ -43,6 +44,7 @@ def read_offsets(df):
         # print(f'offset={offset} num_decimals={num_decimals}')
         df.at[index, 'num_decimals'] = num_decimals
         df.at[index, 'original_offset'] = offset
+    return df.astype({'num_decimals': 'int32'})
 
 
 def write_single_pack_record(df, filepath):
@@ -50,6 +52,23 @@ def write_single_pack_record(df, filepath):
     num_decimals = df['num_decimals'].max()
     df2 = df.drop(columns=['full_filepath', 'num_decimals'])
     df2.to_csv(path_or_buf=file, index=False, float_format=f'%.{int(num_decimals)}f')
+
+
+def apply_single_song_changes(df_row, num_decimals):
+    with fileinput.FileInput(df_row['full_filepath'], inplace=True, backup='.bak') as file:
+        for line in file:
+            m = ssc_offset_regex.match(line)
+            final_offset = df_row['final_offset']
+            if m:
+                print(line.replace(m.group(1), f'{final_offset:.{num_decimals}f}'), end='')
+            else:
+                print(line, end='')
+
+
+def apply_single_pack_changes(df):
+    num_decimals = df['num_decimals'].max()
+    for index, row in df.iterrows():
+        apply_single_song_changes(row, num_decimals)
 
 
 def print_single_pack_record_to_console(df, pack_name):
@@ -101,7 +120,8 @@ if __name__ == '__main__':
     pd.set_option('display.max_columns', 500)
     pd.set_option('display.width', 1000)
     df = filewalk('5guys1pack')
-    read_offsets(df)
+    df = read_offsets(df)
     apply_modification_to_offsets(df, -0.009)
-    write_single_pack_record(df, 'offset_tweak.csv')
-    get_approval_for_single_pack_changes(df)
+    if get_approval_for_single_pack_changes(df):
+        apply_single_pack_changes(df)
+        write_single_pack_record(df, 'offset_tweak.csv')
