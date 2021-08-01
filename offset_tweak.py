@@ -1,6 +1,7 @@
 import os
 import re
 import pandas as pd
+import numpy as np
 
 
 def splitall(path):
@@ -21,6 +22,19 @@ def splitall(path):
             path = parts[0]
             allparts.insert(0, parts[1])
     return allparts
+
+
+ssc_offset_regex = re.compile('#OFFSET:(.+\.(.+));')
+
+
+def read_single_file_offset(filepath):
+    file = open(filepath, 'r')
+    while line := file.readline():
+        m = ssc_offset_regex.match(line)
+        if m:
+            offset, num_decimals = float(m.group(1)), len(m.group(2))
+            # print(f'offset={offset} num_decimals={num_decimals}')
+            return offset, num_decimals
 
 
 def filewalk(root_directory, filetype='ssc'):
@@ -44,5 +58,7 @@ def filewalk(root_directory, filetype='ssc'):
 if __name__ == '__main__':
     pd.set_option('display.max_columns', 500)
     pd.set_option('display.width', 1000)
-    df = filewalk('5guys1pack')
+    df = filewalk('WAWA')
     print(df)
+    print(file := df.loc[0, 'full_filepath'])
+    read_single_file_offset(file)
