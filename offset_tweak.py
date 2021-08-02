@@ -103,9 +103,11 @@ def filewalk(root_directory, filetype='ssc'):
     """Returns a dataframe with all of the file structure information for files of the requested type."""
     filetype_regex = re.compile(f'.+\.{filetype}')
     df = pd.DataFrame()
+    valid_root_directory = False
     for dirpath, dirs, files in os.walk(root_directory):
         dirs.sort(key=lambda v: v.lower())  # Sort so that we travers in alphabetical depth first order
         # print(f'dirpath={dirpath} dirs={dirs} files={files}')
+        valid_root_directory = True
         for file in files:
             if filetype_regex.match(file):
                 splitpath = splitall(dirpath)
@@ -117,16 +119,23 @@ def filewalk(root_directory, filetype='ssc'):
                     dict = {'pack': splitpath[-2], 'song': splitpath[-1], 'file': file,
                             'full_filepath': os.path.join(dirpath, file)}
                     df = df.append(dict, ignore_index=True)
+    if not valid_root_directory:
+        raise ValueError(f'Invalid root_directory={root_directory}')
     return df
 
 
 if __name__ == '__main__':
     pd.set_option('display.max_columns', 500)
     pd.set_option('display.width', 1000)
-    df = filewalk('5guys1pack')
-    df = read_offsets(df)
-    apply_modification_to_offsets(df, -0.009)
-    if get_approval_for_single_pack_changes(df):
-        apply_single_pack_changes(df)
-        pack_directory = get_single_pack_directory(df)
-        write_single_pack_record(df, os.path.join(pack_directory, 'offset_tweak.csv'))
+
+    root_directory = 'Songs/5guys1pack'
+    df = filewalk(root_directory)
+    if df.empty:
+        print(f'No songs found at root_directory={root_directory}"')
+    else:
+        df = read_offsets(df)
+        apply_modification_to_offsets(df, -0.009)
+        if get_approval_for_single_pack_changes(df):
+            apply_single_pack_changes(df)
+            pack_directory = get_single_pack_directory(df)
+            write_single_pack_record(df, os.path.join(pack_directory, 'offset_tweak.csv'))
