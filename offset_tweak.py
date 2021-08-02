@@ -102,13 +102,16 @@ def get_single_pack_directory(df):
     return os.path.commonpath(df['full_filepath'].tolist())
 
 
-def filewalk(root_directory, filetype='ssc'):
+def filewalk(root_directory, filetypes=['ssc', 'sm']):
     """Returns a dataframe with all of the file structure information for files of the requested type."""
-    filetype_regex = re.compile(f'.+\.{filetype}')
+    combined_filetypes = '|'
+    combined_filetypes = combined_filetypes.join(filetypes)
+    filetype_regex = re.compile(f'.+\.({combined_filetypes})')
     df = pd.DataFrame()
     valid_root_directory = False
     for dirpath, dirs, files in os.walk(root_directory):
         dirs.sort(key=lambda v: v.lower())  # Sort so that we travers in alphabetical depth first order
+        files.sort(key=lambda v: v.lower())  # Sort so that we travers in alphabetical depth first order
         # print(f'dirpath={dirpath} dirs={dirs} files={files}')
         valid_root_directory = True
         for file in files:
