@@ -1,6 +1,9 @@
 import fileinput
+import getopt
 import os
 import re
+import sys
+
 import pandas as pd
 
 
@@ -124,17 +127,16 @@ def filewalk(root_directory, filetype='ssc'):
     return df
 
 
-if __name__ == '__main__':
+def tweak_offsets(root_directory, modification):
     pd.set_option('display.max_columns', 500)
     pd.set_option('display.width', 1000)
 
-    root_directory = 'Songs'
     df = filewalk(root_directory)
     if df.empty:
         print(f'No songs found at root_directory={root_directory}"')
     else:
         df = read_offsets(df)
-        apply_modification_to_offsets(df, -0.009)
+        apply_modification_to_offsets(df, modification)
 
         for pack, pack_df in df.groupby('pack'):
             pack_df = pack_df.copy().reset_index(drop=True)
@@ -142,3 +144,31 @@ if __name__ == '__main__':
                 apply_single_pack_changes(pack_df)
                 pack_directory = get_single_pack_directory(pack_df)
                 write_single_pack_record(pack_df, os.path.join(pack_directory, 'offset_tweak.csv'))
+
+
+def main(argv):
+    help_string = 'offset_tweak.py {--toitg | --tonull} <root_directory>'
+
+    modification = 0.0
+    try:
+        opts, args = getopt.getopt(argv, "h", ["toitg", "tonull"])
+    except getopt.GetoptError:
+        print(help_string)
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt == '-h':
+            print(help_string)
+            sys.exit()
+        elif opt == '--toitg':
+            modification = 0.009
+        elif opt == '--tonull':
+            modification = -0.009
+    if len(args) != 1:
+        print(help_string)
+        sys.exit(2)
+    else:
+        tweak_offsets(args[0], modification)
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
