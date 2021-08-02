@@ -128,14 +128,17 @@ if __name__ == '__main__':
     pd.set_option('display.max_columns', 500)
     pd.set_option('display.width', 1000)
 
-    root_directory = 'Songs/5guys1pack'
+    root_directory = 'Songs'
     df = filewalk(root_directory)
     if df.empty:
         print(f'No songs found at root_directory={root_directory}"')
     else:
         df = read_offsets(df)
         apply_modification_to_offsets(df, -0.009)
-        if get_approval_for_single_pack_changes(df):
-            apply_single_pack_changes(df)
-            pack_directory = get_single_pack_directory(df)
-            write_single_pack_record(df, os.path.join(pack_directory, 'offset_tweak.csv'))
+
+        for pack, pack_df in df.groupby('pack'):
+            pack_df = pack_df.copy().reset_index(drop=True)
+            if get_approval_for_single_pack_changes(pack_df):
+                apply_single_pack_changes(pack_df)
+                pack_directory = get_single_pack_directory(pack_df)
+                write_single_pack_record(pack_df, os.path.join(pack_directory, 'offset_tweak.csv'))
