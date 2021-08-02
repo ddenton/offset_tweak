@@ -43,7 +43,7 @@ def read_offsets(df):
         offset, num_decimals = read_single_file_offset(row['full_filepath'])
         # print(f'offset={offset} num_decimals={num_decimals}')
         df.at[index, 'num_decimals'] = num_decimals
-        df.at[index, 'original_offset'] = offset
+        df.at[index, 'initial_offset'] = offset
     return df.astype({'num_decimals': 'int32'})
 
 
@@ -92,7 +92,7 @@ def get_approval_for_single_pack_changes(df):
 
 def apply_modification_to_offsets(df, modification):
     df['modification'] = modification
-    df['final_offset'] = df['original_offset'] + df['modification']
+    df['final_offset'] = df['initial_offset'] + df['modification']
 
 
 def get_single_pack_directory(df):
