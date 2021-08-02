@@ -95,6 +95,10 @@ def apply_modification_to_offsets(df, modification):
     df['final_offset'] = df['original_offset'] + df['modification']
 
 
+def get_single_pack_directory(df):
+    return os.path.commonpath(df['full_filepath'].tolist())
+
+
 def filewalk(root_directory, filetype='ssc'):
     """Returns a dataframe with all of the file structure information for files of the requested type."""
     filetype_regex = re.compile(f'.+\.{filetype}')
@@ -124,4 +128,5 @@ if __name__ == '__main__':
     apply_modification_to_offsets(df, -0.009)
     if get_approval_for_single_pack_changes(df):
         apply_single_pack_changes(df)
-        write_single_pack_record(df, 'offset_tweak.csv')
+        pack_directory = get_single_pack_directory(df)
+        write_single_pack_record(df, os.path.join(pack_directory, 'offset_tweak.csv'))
