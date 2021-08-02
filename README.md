@@ -12,7 +12,7 @@ The script should be run with two arguments. The first argument must be either `
 $ python offset_tweak.py --tonull 'Songs/Rainbow Locus'
 ```
 
-The program will run pack by pack. For each song-pack that it finds, it will list the proposed offset changes to be made to that packs .ssc files. No changes will be actually made unless the user accepts the proposed changes to the pack. If the user does accept, then edits will be made to the .ssc files' offsets, and a csv file named `offset_tweak.csv` will be written to the song-pack directory, detailing the initial and final offsets for each song. 
+The program will run pack by pack. For each song-pack that it finds, it will list the proposed offset changes to be made to that pack's .ssc files. No changes will be applied unless the user accepts. If the user does accept, then edits will be made to the .ssc files' offsets, and a csv file named `offset_tweak.csv` will be written to the song-pack directory detailing the initial and final offsets for each song. 
 
 Regardless of whether the user accepts, the script will then proceed to the next song-pack.
 
