@@ -41,7 +41,7 @@ Apply changes to "5guys1pack"? [Y/n]
 ```
 #### Record Keeping and Idempotency
 
-The `offset_tweak.csv` file stored in each song-pack directory is used by tweak to keep track of what changes have already been applied. Thus, running with `--toitg` multiple times will ignore any packs that have already had the appropriate modification aplied. Similarly, running with `--reset` will return all the songs to their initial offset, before removing the `offset_tweak.csv` file.
+The `offset_tweak.csv` file stored in each song-pack directory is used by tweak to keep track of already applied changes. Thus, running with `--toitg` multiple times will ignore any packs that have already had the appropriate offset mod aplied. Similarly, running with `--reset` will return all the songs to their initial offset before deleting the `offset_tweak.csv`.
 
 #### File Encodings
 
