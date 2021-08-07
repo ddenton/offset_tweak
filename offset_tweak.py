@@ -50,10 +50,10 @@ def read_offsets(df):
 
 
 def write_single_pack_record(df, filepath):
-    file = open(filepath, 'w')
-    num_decimals = df['num_decimals'].max()
-    df2 = df.drop(columns=['full_filepath', 'num_decimals'])
-    df2.to_csv(path_or_buf=file, index=False, float_format=f'%.{int(num_decimals)}f')
+    with open(filepath, 'w') as file:
+        num_decimals = df['num_decimals'].max()
+        df2 = df.drop(columns=['full_filepath', 'num_decimals'])
+        df2.to_csv(path_or_buf=file, index=False, float_format=f'%.{int(num_decimals)}f')
 
 
 offset_regex_outer_group = re.compile('(#OFFSET:.+\..+;)')
