@@ -1,9 +1,19 @@
+import errno
 import getopt
 import os
 import re
 import sys
 
+import numpy as np
 import pandas as pd
+
+
+def silentremove(filename):
+    try:
+        os.remove(filename)
+    except OSError as e: # this would be "except OSError, e:" before Python 2.6
+        if e.errno != errno.ENOENT: # errno.ENOENT = no such file or directory
+            raise # re-raise exception if a different error occurred
 
 
 def splitall(path):
@@ -39,21 +49,40 @@ def read_single_file_offset(filepath):
                 return offset, num_decimals
 
 
-def read_offsets(df):
-    """Read the offsets from the files into the dataframe."""
+def read_current_offsets(df):
+    """Read the current offsets and use these as the initial offsets whenever we failed to get them from a record."""
     for index, row in df.iterrows():
         offset, num_decimals = read_single_file_offset(row['full_filepath'])
         # print(f'offset={offset} num_decimals={num_decimals}')
-        df.at[index, 'num_decimals'] = num_decimals
-        df.at[index, 'initial_offset'] = offset
-    return df.astype({'num_decimals': 'int32'})
+        df.at[index, 'current_offset'] = offset
+        if pd.isnull(row['initial_offset']):
+            df.at[index, 'num_decimals'] = num_decimals
+            df.at[index, 'initial_offset'] = offset
+    return df
 
 
 def write_single_pack_record(df, filepath):
     with open(filepath, 'w') as file:
         num_decimals = df['num_decimals'].max()
-        df2 = df.drop(columns=['full_filepath', 'num_decimals'])
+        df2 = df.drop(columns=['full_filepath', 'num_decimals', 'current_offset'])
         df2.to_csv(path_or_buf=file, index=False, float_format=f'%.{int(num_decimals)}f')
+
+
+def read_single_pack_record(df, filepath):
+    """ Read the initial_offsets into the dataframe from the offset_tweak.csv record if it exists."""
+    try:
+        with open(filepath, 'r') as file:
+            df2 = pd.read_csv(filepath)
+            for index, row in df2.iterrows():
+                df.loc[(df['pack'] == row['pack']) &
+                       (df['song'] == row['song']) &
+                       (df['file'] == row['file']), 'initial_offset'] = row['initial_offset']
+                df.loc[(df['pack'] == row['pack']) &
+                       (df['song'] == row['song']) &
+                       (df['file'] == row['file']), 'num_decimals'] = 6
+        return True
+    except FileNotFoundError:
+        return False
 
 
 offset_regex_outer_group = re.compile('(#OFFSET:.+\..+;)')
@@ -100,14 +129,22 @@ def apply_single_pack_changes(df):
 
 
 def print_single_pack_record_to_console(df, pack_name):
-    df2 = df.drop(columns=['pack', 'song', 'full_filepath', 'num_decimals'])
+    df2 = df.drop(columns=['pack', 'song', 'full_filepath', 'num_decimals', 'current_offset'])
     print(f'Tweaking offsets for \"{pack_name}\"')
     print(df2)
 
 
+def no_change_slice(df):
+    return [not np.isclose(current_offset, final_offset) for
+            current_offset, final_offset in zip(df['current_offset'], df['final_offset'])]
+
+
 def get_approval_for_single_pack_changes(df):
+    pack_name = None
     if df.shape[0]:
         pack_name = df.at[0, 'pack']
+    df = df.loc[no_change_slice, :]
+    if df.shape[0]:
         print_single_pack_record_to_console(df, pack_name)
         while True:
             x = input(f'Apply changes to \"{pack_name}\"? [Y/n] ')
@@ -163,7 +200,14 @@ def tweak_offsets(root_directory, modification):
     if df.empty:
         print(f'No songs found at root_directory={root_directory}"')
     else:
-        df = read_offsets(df)
+        df = df.assign(num_decimals=np.NaN)
+        df = df.assign(initial_offset=np.NaN)
+        for pack, pack_df in df.groupby('pack'):
+            pack_directory = get_single_pack_directory(pack_df)
+            read_single_pack_record(df, os.path.join(pack_directory, 'offset_tweak.csv'))
+        df = read_current_offsets(df)
+        df = df.astype({'num_decimals': 'int32'})
+
         apply_modification_to_offsets(df, modification)
 
         for pack, pack_df in df.groupby('pack'):
@@ -171,15 +215,19 @@ def tweak_offsets(root_directory, modification):
             if get_approval_for_single_pack_changes(pack_df):
                 apply_single_pack_changes(pack_df)
                 pack_directory = get_single_pack_directory(pack_df)
-                write_single_pack_record(pack_df, os.path.join(pack_directory, 'offset_tweak.csv'))
+                if modification:
+                    write_single_pack_record(pack_df, os.path.join(pack_directory, 'offset_tweak.csv'))
+                else:
+                    silentremove(os.path.join(pack_directory, 'offset_tweak.csv'))
+
 
 
 def main(argv):
-    help_string = 'offset_tweak.py {--toitg | --tonull} <root_directory>'
+    help_string = 'offset_tweak.py {--toitg | --tonull | --reset} <root_directory>'
 
     modification = 0.0
     try:
-        opts, args = getopt.getopt(argv, "h", ["toitg", "tonull"])
+        opts, args = getopt.getopt(argv, "h", ["toitg", "tonull", "reset"])
     except getopt.GetoptError:
         print(help_string)
         sys.exit(2)
@@ -191,6 +239,8 @@ def main(argv):
             modification = 0.009
         elif opt == '--tonull':
             modification = -0.009
+        elif opt == '--reset':
+            modification = 0.0
     if len(args) != 1:
         print(help_string)
         sys.exit(2)
