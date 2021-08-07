@@ -227,12 +227,12 @@ def main(argv):
 
     modification = 0.0
     try:
-        opts, args = getopt.getopt(argv, "h", ["toitg", "tonull", "reset"])
+        opts, args = getopt.getopt(argv, "h", ["help", "toitg", "tonull", "reset", "custom="])
     except getopt.GetoptError:
         print(help_string)
         sys.exit(2)
     for opt, arg in opts:
-        if opt == '-h':
+        if opt == ('-h', '--help'):
             print(help_string)
             sys.exit()
         elif opt == '--toitg':
@@ -241,6 +241,8 @@ def main(argv):
             modification = -0.009
         elif opt == '--reset':
             modification = 0.0
+        elif opt == '--custom':
+            modification = float(arg)
     if len(args) != 1:
         print(help_string)
         sys.exit(2)
