@@ -31,13 +31,13 @@ ssc_offset_regex = re.compile('#OFFSET:(.+\.(.+));')
 
 
 def read_single_file_offset(filepath):
-    file = open(filepath, 'r', errors='replace')
-    while line := file.readline():
-        m = ssc_offset_regex.match(line)
-        if m:
-            offset, num_decimals = float(m.group(1)), len(m.group(2))
-            # print(f'offset={offset} num_decimals={num_decimals}')
-            return offset, num_decimals
+    with open(filepath, 'r', errors='replace') as f:
+        while line := f.readline():
+            m = ssc_offset_regex.match(line)
+            if m:
+                offset, num_decimals = float(m.group(1)), len(m.group(2))
+                # print(f'offset={offset} num_decimals={num_decimals}')
+                return offset, num_decimals
 
 
 def read_offsets(df):
