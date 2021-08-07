@@ -43,8 +43,15 @@ Apply changes to "5guys1pack"? [Y/n]
 
 The `offset_tweak.csv` file stored in each song-pack directory is used by tweak to keep track of already applied changes. Thus, running with `--toitg` multiple times will ignore any packs that have already had the appropriate offset mod aplied. Similarly, running with `--reset` will return all the songs to their initial offset before deleting the `offset_tweak.csv`.
 
+#### Custom Offsets
+
+Optionaly, tweak now accepts a custom offset as a substitute for the fixed offset options (toitg or tonull). Example usage:
+```
+$ python offset_tweak.py --custom -0.010 'Songs/Rainbow Locus'
+```
+
+
 #### File Encodings
 
 In testing, I have discovered that some `.ssc` and `.sm` files use the ISO-8859-1 encoding instead of utf-8. offset_tweak.py now accepts these ISO-8859-1 encoded files, but if it makes any changes it will resave the files as utf-8. (This shouldn't be problematic as transcoding from ISO-8859-1 to utf-8 is lossless.)
-
 
