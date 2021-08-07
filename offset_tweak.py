@@ -75,7 +75,6 @@ def apply_single_pack_changes(df):
 
 
 def print_single_pack_record_to_console(df, pack_name):
-    pack_name = df.at[0, 'pack']
     df2 = df.drop(columns=['pack', 'song', 'full_filepath', 'num_decimals'])
     print(f'Tweaking offsets for \"{pack_name}\"')
     print(df2)
