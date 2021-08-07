@@ -26,13 +26,13 @@ def splitall(path):
     return allparts
 
 
-ssc_offset_regex = re.compile('#OFFSET:(.+\.(.+));')
+offset_regex = re.compile('#OFFSET:(.+\.(.+));')
 
 
 def read_single_file_offset(filepath):
     with open(filepath, 'r', errors='replace') as f:
         while line := f.readline():
-            m = ssc_offset_regex.match(line)
+            m = offset_regex.match(line)
             if m:
                 offset, num_decimals = float(m.group(1)), len(m.group(2))
                 # print(f'offset={offset} num_decimals={num_decimals}')
