@@ -5,7 +5,7 @@ A simple tool for changing stepmania songs between the ITG offset and null offse
 offset_tweak.py is a single script requiring Python3 and Pandas. Installing [Anaconda](https://www.anaconda.com/products/individual) would be my recommended approach.
 
 #### Usage
-The script should be run with two arguments. The first argument must be either `--toitg` (+0.009) or `--tonull` (-0.009). The second argument is the root_directory from which the script should begin its search. This path can be either relative or absolute, and it should point either to a single song-pack which you wish to convert, or to a parent directory of one or more song-packs which can all be converted together. (Note that you will be asked to confirm the conversion of each pack individually, so it is fine to point to your `Song` directory when only a subset of your packs need conversion.)
+The script should be run with two arguments. The first argument can be either `--toitg` (+0.009) or `--tonull` (-0.009) or `--reset`. The second argument is the root_directory from which the script should begin its search. This path can be either relative or absolute, and it should point either to a single song-pack which you wish to convert, or to a parent directory of one or more song-packs which can all be converted together. (Note that you will be asked to confirm the conversion of each pack individually, so it is fine to point to your `Song` directory when only a subset of your packs need conversion.)
 
 ###### Example 
 ```
@@ -39,4 +39,12 @@ Tweaking offsets for "5guys1pack"
 16  Secret Weapons - Ghost (Tommie Sunshine & SLAT...           0.009        -0.009         0.000
 Apply changes to "5guys1pack"? [Y/n] 
 ```
+#### Record Keeping and Idempotency
+
+The `offset_tweak.csv` file stored in each song-pack directory is used by tweak to keep track of what changes have already been applied. Thus, running with `--toitg` multiple times will ignore any packs that have already had the appropriate modification aplied. Similarly, running with `--reset` will return all the songs to their initial offset, before removing the `offset_tweak.csv` file.
+
+#### File Encodings
+
+In testing, I have discovered that some `.ssc` and `.sm` files use the ISO-8859-1 encoding instead of utf-8. offset_tweak.py now accepts these ISO-8859-1 encoded files, but if it makes any changes it will resave the files as utf-8. (This shouldn't be problematic as transcoding from ISO-8859-1 to utf-8 is lossless.)
+
 
