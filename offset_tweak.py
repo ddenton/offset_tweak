@@ -1,4 +1,3 @@
-import fileinput
 import getopt
 import os
 import re
@@ -57,15 +56,41 @@ def write_single_pack_record(df, filepath):
     df2.to_csv(path_or_buf=file, index=False, float_format=f'%.{int(num_decimals)}f')
 
 
+offset_regex_outer_group = re.compile('(#OFFSET:.+\..+;)')
+
+
+def replace_offset(str, final_offset, num_decimals):
+    if offset_regex_outer_group.match(str):
+        return f'#OFFSET:{final_offset:.{num_decimals}f};'
+    return str
+
+
+def apply_single_song_changes_with_encoding(full_filepath, final_offset, num_decimals, input_encoding,
+                                            output_encoding='utf-8'):
+    with open(full_filepath, 'r', encoding=input_encoding) as f:
+        content = f.read()
+    replaced = (replace_offset(s, final_offset, num_decimals) for
+                s in re.split(offset_regex_outer_group.pattern, content))
+    content = (''.join(replaced)).encode(output_encoding)
+    with open(full_filepath, 'wb') as o:
+        o.write(content)
+
+
 def apply_single_song_changes(df_row, num_decimals):
-    with fileinput.FileInput(df_row['full_filepath'], inplace=True) as file:
-        for line in file:
-            m = ssc_offset_regex.match(line)
-            final_offset = df_row['final_offset']
-            if m:
-                print(line.replace(m.group(1), f'{final_offset:.{num_decimals}f}'), end='')
-            else:
-                print(line, end='')
+    full_filepath = df_row['full_filepath']
+    final_offset = df_row['final_offset']
+    encoding, output_encoding = 'utf-8', 'utf-8'
+    try:
+        apply_single_song_changes_with_encoding(full_filepath, final_offset, num_decimals, encoding,
+                                                output_encoding=output_encoding)
+    except UnicodeDecodeError as e:
+        try:
+            encoding = 'ISO-8859-1'
+            apply_single_song_changes_with_encoding(full_filepath, final_offset, num_decimals, encoding,
+                                                    output_encoding=output_encoding)
+            print(f'Detected {encoding} encoding for {full_filepath}, re-encoded as {output_encoding}')
+        except:
+            raise  # If neither of the supported encoding types worked, THEN throw the exceptions
 
 
 def apply_single_pack_changes(df):
@@ -101,7 +126,7 @@ def get_single_pack_directory(df):
     return os.path.commonpath(df['full_filepath'].tolist())
 
 
-def filewalk(root_directory, filetypes=['ssc', 'sm']):
+def filewalk(root_directory, filetypes=('ssc', 'sm')):
     """Returns a dataframe with all of the file structure information for files of the requested type."""
     combined_filetypes = '|'
     combined_filetypes = combined_filetypes.join(filetypes)
@@ -132,6 +157,7 @@ def filewalk(root_directory, filetypes=['ssc', 'sm']):
 def tweak_offsets(root_directory, modification):
     pd.set_option('display.max_columns', 500)
     pd.set_option('display.width', 1000)
+    pd.set_option('display.max_rows', None)
 
     df = filewalk(root_directory)
     if df.empty:
